@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "adsense": {
+      "command": "npx",
+      "args": ["-y", "@dablincx/adsense-mcp@beta"],
+      "env": {
+        "ADSENSE_CLIENT_ID": "...",
+        "ADSENSE_CLIENT_SECRET": "..."
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+name: Build and publish npm package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Update npm for OIDC trusted publishing
+        run: npm install --global npm@latest
+      - name: Read package version
+        id: package
+        shell: bash
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+      - name: Check whether package version changed in this push
+        id: version_changed
+        shell: bash
+        run: |
+          before="${{ github.event.before }}"
+          current="${{ github.sha }}"
+          if [[ "$before" == "0000000000000000000000000000000000000000" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$before" "$current" -- package.json package-lock.json | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check whether this version is already published
+        id: published
+        if: steps.version_changed.outputs.changed == 'true'
+        shell: bash
+        run: |
+          if npm view "@dablincx/adsense-mcp@${{ steps.package.outputs.version }}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
+        run: npm ci
+      - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
+        run: npm run build
+      - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
+        name: Publish package
+        shell: bash
+        run: |
+          if [[ "${{ steps.package.outputs.version }}" == *-* ]]; then
+            npm publish --access public --tag beta
+          else
+            npm publish --access public --tag latest
+          fi
