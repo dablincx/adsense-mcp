@@ -37,6 +37,10 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Update npm for OIDC trusted publishing
         run: npm install --global npm@latest
+      - name: Build package for release
+        run: |
+          npm ci
+          npm run build
       - name: Read package version
         id: package
         shell: bash
@@ -65,15 +69,11 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
-        run: npm ci
-      - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
-        run: npm run build
-      - if: steps.version_changed.outputs.changed == 'true' && steps.published.outputs.exists == 'false'
         name: Publish package
         shell: bash
         run: |
           if [[ "${{ steps.package.outputs.version }}" == *-* ]]; then
-            npm publish --access public --tag beta
+            npm stage publish --access public --tag beta
           else
-            npm publish --access public --tag latest
+            npm stage publish --access public --tag latest
           fi
