@@ -38,9 +38,9 @@ The server uses **stdio** and does not open a public network port. You don't nee
 
 ## VS Code
 
-This repository's `.mcp.json` includes `adsense` (the published package) and `adsense-dev` (the locally built `dist/index.js`). The dev server requires `npm run build` after source edits; restart it from VS Code after rebuilding.
+This repository's `.mcp.json` includes `adsense` (based on the published package). You can create a workspace specific mcp dev server by providing the same env vars as specified in .mcp.json and `npm run dev` .
 
-An equivalent published-package entry in VS Code's `.vscode/mcp.json` format is:
+An equivalent published-package entry in VS Code's `.vscode/mcp.json` format could be:
 
 ```json
 {
@@ -49,10 +49,9 @@ An equivalent published-package entry in VS Code's `.vscode/mcp.json` format is:
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "@dablincx/adsense-mcp@beta"],
-      "envFile": "${workspaceFolder}/.env",
       "env": {
-        "ADSENSE_CLIENT_ID": "${env:ADSENSE_CLIENT_ID}",
-        "ADSENSE_CLIENT_SECRET": "${env:ADSENSE_CLIENT_SECRET}"
+        "ADSENSE_CLIENT_ID": "...",
+        "ADSENSE_CLIENT_SECRET": "..."
       }
     }
   }
